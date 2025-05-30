@@ -168,7 +168,7 @@ const CreateOKR = () => {
             Save Draft
           </button>
           <button
-            onClick={handlePublish}
+            onClick={}
             style={{
               padding: '8px 16px',
               backgroundColor: '#3b82f6',
