@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UserPlus, Shield } from 'lucide-react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -11,6 +11,7 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const { register } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,14 +19,14 @@ const Signup = () => {
     setSuccess(false);
     setIsLoading(true);
     try {
-      await axios.post('/api/register', { name, email, password, role });
+      await register(name, email, password, role);
       setSuccess(true);
       setName('');
       setEmail('');
       setPassword('');
       setRole('MEMBER');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const CreateOKR = () => {
   const [objective, setObjective] = useState('');
@@ -13,60 +14,122 @@ const CreateOKR = () => {
     { id: '1', title: '', target: '', unit: '', description: '' },
   ]);
 
+  // Store only the essential data that will be saved to the list
+  const essentialData = {
+    id: Date.now().toString(), // Generate unique ID
+    title: objective,
+    description: description,
+    progress: 0, // New OKRs start at 0%
+    dueDate: endDate,
+    owner: 'Current User', // You can replace this with actual user name
+    team: assignedTeam,
+    keyResults: keyResults.length,
+  };
+
+  // Store complete form data for internal use (not saved to list)
+  const completeFormData = {
+    objective,
+    description,
+    category,
+    priority,
+    visibility,
+    startDate,
+    endDate,
+    assignedTeam,
+    keyResults
+  };
+   const completeFormDatas = {
+    objective,
+    description,
+    category,
+    priority,
+    visibility,
+    startDate,
+    endDate,
+    assignedTeam,
+    keyResults
+  };
+
+  // Log form data whenever any field changes
+  useEffect(() => {
+    console.log('=== ESSENTIAL DATA (to be saved) ===');
+    console.log('Essential Data:', essentialData);
+    console.log('=== COMPLETE FORM DATA (internal use) ===');
+    console.log('Complete Form Data:', completeFormDatas);
+    console.log('====================================');
+  }, [objective, description, category, priority, visibility, startDate, endDate, assignedTeam, keyResults]);
+
   const addKeyResult = () => {
     const newId = (keyResults.length + 1).toString();
-    setKeyResults([
+    const newKeyResults = [
       ...keyResults,
       { id: newId, title: '', target: '', unit: '', description: '' },
-    ]);
+    ];
+    setKeyResults(newKeyResults);
+    console.log('Added new key result. Total key results:', newKeyResults.length);
   };
 
   const removeKeyResult = (id) => {
     if (keyResults.length > 1) {
-      setKeyResults(keyResults.filter((kr) => kr.id !== id));
+      const filteredResults = keyResults.filter((kr) => kr.id !== id);
+      setKeyResults(filteredResults);
+      console.log('Removed key result with ID:', id);
+      console.log('Remaining key results:', filteredResults);
     }
   };
 
   const updateKeyResult = (id, field, value) => {
-    setKeyResults(
-      keyResults.map((kr) =>
-        kr.id === id ? { ...kr, [field]: value } : kr
-      )
+    const updatedKeyResults = keyResults.map((kr) =>
+      kr.id === id ? { ...kr, [field]: value } : kr
     );
+    setKeyResults(updatedKeyResults);
+    console.log(`Updated key result ${id} - ${field}:`, value);
+    console.log('Updated key result object:', updatedKeyResults.find(kr => kr.id === id));
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high':
-        return { backgroundColor: '#fee2e2', color: '#991b1b' };
-      case 'medium':
-        return { backgroundColor: '#fef3c7', color: '#78350f' };
-      case 'low':
-        return { backgroundColor: '#d1fae5', color: '#065f46' };
-      default:
-        return { backgroundColor: '#e5e7eb', color: '#374151' };
-    }
-  };
 
   const handleSaveDraft = () => {
-    alert('Saving as draft...');
-    // Implement saving logic here
+    console.log('=== SAVING DRAFT ===');
+    console.log('Essential Data (to be added to OKR list):', essentialData);
+    console.log('Complete Form Data (internal):', completeFormData);
+    console.log('==================');
+    alert('Saving as draft... Check console for essential data to store!');
   };
 
-  const handlePublish = () => {
-    alert('Publishing OKR...');
-    // Implement publishing logic here
-  };
+  const handlePublish = async () => {
+  const url = `http://localhost:3000`;
+
+  try {
+    const response = await axios.post(url + `/api/add/addokr`, completeFormData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log(response);
+    if (response.data.success) {
+      // Redirect on success
+      window.location.replace("http://localhost:5173/");
+    } else {
+      console.error("Server responded with success: false");
+    }
+
+  } catch (error) {
+    // This block handles network or server errors (like 500, 404, etc.)
+    console.error("Error while publishing:", error.response?.data || error.message);
+  }
+};
+
+
 
   return (
     <div
       style={{
         minHeight: '100vh',
         width: '100vw',
-        backgroundColor: '#000',
-        color: '#eee',
+        backgroundColor: '#0f172a',
+        color: '#e2e8f0',
         padding: '20px',
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         boxSizing: 'border-box',
       }}
     >
@@ -77,15 +140,15 @@ const CreateOKR = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '30px',
-          color: '#eee',
+          color: '#e2e8f0',
         }}
       >
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#fff' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f1f5f9' }}>
             Create New OKR
           </h1>
-          <p style={{ color: '#bbb', marginTop: '8px' }}>
-            Define your objectives and key results
+          <p style={{ color: '#94a3b8', marginTop: '8px' }}>
+            Define your objectives and key results (Check console for data structure)
           </p>
         </div>
         <div>
@@ -93,11 +156,13 @@ const CreateOKR = () => {
             onClick={handleSaveDraft}
             style={{
               marginRight: '10px',
-              padding: '8px 12px',
-              border: '1px solid #888',
-              background: '#222',
-              color: '#eee',
+              padding: '8px 16px',
+              border: '1px solid #475569',
+              background: '#1e293b',
+              color: '#e2e8f0',
+              borderRadius: '6px',
               cursor: 'pointer',
+              fontSize: '14px',
             }}
           >
             Save Draft
@@ -105,11 +170,13 @@ const CreateOKR = () => {
           <button
             onClick={handlePublish}
             style={{
-              padding: '8px 12px',
-              backgroundColor: '#2563eb',
+              padding: '8px 16px',
+              backgroundColor: '#3b82f6',
               color: 'white',
               border: 'none',
+              borderRadius: '6px',
               cursor: 'pointer',
+              fontSize: '14px',
             }}
           >
             Publish OKR
@@ -123,84 +190,105 @@ const CreateOKR = () => {
           {/* Objective Section */}
           <section
             style={{
-              border: '1px solid #444',
-              borderRadius: '6px',
-              padding: '16px',
+              border: '1px solid #334155',
+              borderRadius: '8px',
+              padding: '20px',
               marginBottom: '24px',
-              backgroundColor: '#111',
+              backgroundColor: '#1e293b',
             }}
           >
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '16px', color: '#f1f5f9' }}>
               🎯 Objective
             </h2>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', color: '#cbd5e1', fontSize: '14px' }}>
                 Objective Title *
               </label>
               <input
                 type="text"
                 placeholder="What do you want to achieve?"
                 value={objective}
-                onChange={(e) => setObjective(e.target.value)}
+                onChange={(e) => {
+                  setObjective(e.target.value);
+                  console.log('Objective changed:', e.target.value);
+                }}
                 style={{
                   width: '100%',
-                  padding: '8px',
-                  backgroundColor: '#222',
-                  border: '1px solid #555',
-                  color: '#eee',
+                  padding: '10px',
+                  backgroundColor: '#0f172a',
+                  border: '1px solid #475569',
+                  borderRadius: '6px',
+                  color: '#e2e8f0',
+                  fontSize: '14px',
                 }}
               />
             </div>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', color: '#cbd5e1', fontSize: '14px' }}>
                 Description
               </label>
               <textarea
                 placeholder="Provide more context about this objective..."
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  console.log('Description changed:', e.target.value);
+                }}
                 rows={4}
                 style={{
                   width: '100%',
-                  padding: '8px',
-                  backgroundColor: '#222',
-                  border: '1px solid #555',
-                  color: '#eee',
+                  padding: '10px',
+                  backgroundColor: '#0f172a',
+                  border: '1px solid #475569',
+                  borderRadius: '6px',
+                  color: '#e2e8f0',
+                  fontSize: '14px',
+                  resize: 'vertical',
                 }}
               />
             </div>
             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 200px' }}>
-                <label style={{ display: 'block', marginBottom: '6px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', color: '#cbd5e1', fontSize: '14px' }}>
                   Category
                 </label>
                 <input
                   type="text"
                   placeholder="e.g., Product, Marketing"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    console.log('Category changed:', e.target.value);
+                  }}
                   style={{
                     width: '100%',
-                    padding: '8px',
-                    backgroundColor: '#222',
-                    border: '1px solid #555',
-                    color: '#eee',
+                    padding: '10px',
+                    backgroundColor: '#0f172a',
+                    border: '1px solid #475569',
+                    borderRadius: '6px',
+                    color: '#e2e8f0',
+                    fontSize: '14px',
                   }}
                 />
               </div>
               <div style={{ flex: '1 1 200px' }}>
-                <label style={{ display: 'block', marginBottom: '6px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', color: '#cbd5e1', fontSize: '14px' }}>
                   Priority
                 </label>
                 <select
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
+                  onChange={(e) => {
+                    setPriority(e.target.value);
+                    console.log('Priority changed:', e.target.value);
+                  }}
                   style={{
                     width: '100%',
-                    padding: '8px',
-                    backgroundColor: '#222',
-                    border: '1px solid #555',
-                    color: '#eee',
+                    padding: '10px',
+                    backgroundColor: '#0f172a',
+                    border: '1px solid #475569',
+                    borderRadius: '6px',
+                    color: '#e2e8f0',
+                    fontSize: '14px',
                   }}
                 >
                   <option value="high">High</option>
@@ -389,7 +477,10 @@ const CreateOKR = () => {
               </label>
               <select
                 value={assignedTeam}
-                onChange={(e) => setAssignedTeam(e.target.value)}
+                onChange={(e) => {
+                  setAssignedTeam(e.target.value);
+                  console.log('Assigned Team changed:', e.target.value);
+                }}
                 style={{
                   width: '100%',
                   padding: '8px',
@@ -412,7 +503,10 @@ const CreateOKR = () => {
               </label>
               <select
                 value={visibility}
-                onChange={(e) => setVisibility(e.target.value)}
+                onChange={(e) => {
+                  setVisibility(e.target.value);
+                  console.log('Visibility changed:', e.target.value);
+                }}
                 style={{
                   width: '100%',
                   padding: '8px',
@@ -434,7 +528,10 @@ const CreateOKR = () => {
               <input
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  console.log('Start Date changed:', e.target.value);
+                }}
                 style={{
                   width: '100%',
                   padding: '8px',
@@ -451,7 +548,10 @@ const CreateOKR = () => {
               <input
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  console.log('End Date changed:', e.target.value);
+                }}
                 style={{
                   width: '100%',
                   padding: '8px',
